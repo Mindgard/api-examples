@@ -53,29 +53,31 @@ def write_to_csv(model_name: str, attack_metadata: Any, compiled_responses: list
 
     for item in compiled_responses:
         csv_writer.writerow([
-            attack_metadata["id"],
+            attack_metadata.get("id", None),
             model_name,
-            attack_metadata["submitted_at"],
-            item["prompt"],
-            item["answer"],
-            item["question"],
-            item["success"] if item["flagged"] is None else item["flagged"]
+            attack_metadata.get("submitted_at", None),
+            item.get("prompt", None),
+            item.get("answer", None),
+            item.get("question", None),
+            item.get("success") if item.get("flagged") is None else item.get("flagged")
             ])
 
 def fetch_all_attacks_for_each_test(tests_by_model_name: list[dict[str, Any]], access_token: str):
     for test in tests_by_model_name:
-        url = f"https://api.sandbox.mindgard.ai/api/v1/tests/{test["id"]}/attacks"
+        url = f"https://api.sandbox.mindgard.ai/api/v1/tests/{test.get('id', None)}/attacks"
         response = requests.get(url=url, headers={"Authorization": f"Bearer {access_token}"})
 
         attack_ids = [test["attack"]["id"] for test in response.json()["items"]]
         for attack_id in attack_ids:
-            url = f"https://api.sandbox.mindgard.ai/api/v1/tests/{test["id"]}/attacks/{attack_id}"
+            url = f"https://api.sandbox.mindgard.ai/api/v1/tests/{test.get('id', None)}/attacks/{attack_id}"
             response = requests.get(url=url, headers={"Authorization": f"Bearer {access_token}"})
 
-            attack_result = response.json()["result"]
-            model_name = attack_result["model"]["name"]
-            metadata = attack_result["meta"]
-            compiled_responses = attack_result["results"]["compiled_responses"]
+            attack_result = response.json().get("result", {}) or {}
+            model_name = attack_result.get("model", {}).get("name", None)
+            metadata = attack_result.get("meta", {}) or {}
+            results = attack_result.get("results", {}) or {}
+            compiled_responses = results.get("compiled_responses") or []
+
 
             write_to_csv(model_name=model_name, attack_metadata=metadata, compiled_responses=compiled_responses)
 
@@ -84,5 +86,5 @@ def fetch_all_attacks_for_each_test(tests_by_model_name: list[dict[str, Any]], a
 
 
 access_token = authenticate()
-result = fetch_tests_for_model(model_name="openai-using-preset", access_token=access_token)
+result = fetch_tests_for_model(model_name="mistral", access_token=access_token)
 fetch_all_attacks_for_each_test(tests_by_model_name=result, access_token=access_token)
