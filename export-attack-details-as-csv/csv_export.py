@@ -1,10 +1,10 @@
-import dataclasses
 from typing import Any
-
 import requests
 import os
 import sys
 import csv
+
+target_name = "ENTER_YOUR_TARGET_NAME_HERE"
 
 # Authenticate
 def authenticate() -> str:
@@ -26,19 +26,6 @@ def authenticate() -> str:
             .get("access_token")
         )
     return access_token
-
-@dataclasses.dataclass
-class TestApiResponse:
-    id: str
-    created_at: str
-    # source: str
-    mindgard_model_name: str
-    # has_finished: bool
-    # is_owned: bool
-    # total_events: int
-    # flagged_events: int
-    # attacks:
-    # model_type: str
 
 # Fetch tests by model_name
 def fetch_tests_for_model(model_name: str, access_token: str) -> list[dict[str, Any]]:
@@ -82,9 +69,6 @@ def fetch_all_attacks_for_each_test(tests_by_model_name: list[dict[str, Any]], a
             write_to_csv(model_name=model_name, attack_metadata=metadata, compiled_responses=compiled_responses)
 
 
-
-
-
 access_token = authenticate()
-result = fetch_tests_for_model(model_name="mistral", access_token=access_token)
+result = fetch_tests_for_model(model_name=target_name, access_token=access_token)
 fetch_all_attacks_for_each_test(tests_by_model_name=result, access_token=access_token)
