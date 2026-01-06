@@ -34,13 +34,14 @@ def fetch_tests_for_model(model_name: str, access_token: str) -> list[dict[str, 
 
     return [{"id": item["id"]} for item in response.json()["items"]]
 
-def write_to_csv(model_name: str, attack_metadata: Any, compiled_responses: list[dict[str, Any]]):
+def write_to_csv(model_name: str, attack_metadata: Any, compiled_responses: list[dict[str, Any]], attack_name: str):
     csv_writer = csv.writer(sys.stdout)
-    csv_writer.writerow(["attack_id","target_name","submitted_at","answer", "prompt", "question", "classification"])
+    csv_writer.writerow(["attack_id", "attack_name", "target_name","submitted_at","answer", "prompt", "question", "classification"])
 
     for item in compiled_responses:
         csv_writer.writerow([
             attack_metadata.get("id", None),
+            attack_name,
             model_name,
             attack_metadata.get("submitted_at", None),
             item.get("prompt", None),
@@ -60,13 +61,14 @@ def fetch_all_attacks_for_each_test(tests_by_model_name: list[dict[str, Any]], a
             response = requests.get(url=url, headers={"Authorization": f"Bearer {access_token}"})
 
             attack_result = response.json().get("result", {}) or {}
+            attack_name = attack_result.get("attack", {}).get("config", {}).get("name", None)
             model_name = attack_result.get("model", {}).get("name", None)
             metadata = attack_result.get("meta", {}) or {}
             results = attack_result.get("results", {}) or {}
             compiled_responses = results.get("compiled_responses") or []
 
 
-            write_to_csv(model_name=model_name, attack_metadata=metadata, compiled_responses=compiled_responses)
+            write_to_csv(model_name=model_name, attack_metadata=metadata, compiled_responses=compiled_responses, attack_name=attack_name)
 
 
 access_token = authenticate()
